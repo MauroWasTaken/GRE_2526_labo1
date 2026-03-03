@@ -1,4 +1,4 @@
-package ch.heig.gre.groupX;
+package ch.heig.gre.groupA;
 
 import ch.heig.gre.graph.Graph;
 import ch.heig.gre.graph.GridGraph2D;

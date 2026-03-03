@@ -1,4 +1,4 @@
-package ch.heig.gre.groupX;
+package ch.heig.gre.groupA;
 
 import ch.heig.gre.gui.ChoiceItem;
 import ch.heig.gre.gui.Config;

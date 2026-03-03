@@ -6,5 +6,5 @@ module ch.heig.gre {
 
   opens ch.heig.gre.gui to javafx.fxml;
   opens ch.heig.gre.maze.impl;
-  opens ch.heig.gre.groupX to javafx.graphics;
+  opens ch.heig.gre.groupA to javafx.graphics;
 }
