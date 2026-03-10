@@ -1,3 +1,5 @@
+// Maikol Correia Da Silva et Mauro Santos
+
 package ch.heig.gre.groupA;
 
 import ch.heig.gre.graph.Graph;
@@ -6,61 +8,70 @@ import ch.heig.gre.maze.MazeGenerator;
 import ch.heig.gre.maze.Progression;
 import ch.heig.gre.util.ArrayUtil;
 
-import java.util.*;
+import java.util.ArrayDeque;
+import java.util.Deque;
 
-// TODO : classe à compléter et documenter
 public final class DfsGenerator implements MazeGenerator {
 	@Override
 	public void generate(MazeBuilder builder, int from) {
-		// Mise à jour de l'interface graphique :
-		// builder.progressions().setLabel(..., ...);
 
 		Graph graph = builder.topology();
-		int[] start = new int[graph.nbVertices()], end = new int[graph.nbVertices()], p = new int[graph.nbVertices()];
-		int date = 0;
-		Deque<int[]> stack = new ArrayDeque<>();
-		for (int i = 0; i < graph.nbVertices(); ++i) {
-			if (start[i] == 0) {
-				stack.push(new int[]{i, -1}); // {noeud, parent}
 
-				while (!stack.isEmpty()) {
-					int[] current = stack.pop();
-					int u = current[0];
-					int parent = current[1];
+		// Tableau qui contiendra un boolean indiquant si un sommet a été visité ou non
+		boolean[] visited = new boolean[graph.nbVertices()];
 
-					if (u < 0) {
-						// Phase "après" : on récupère le vrai noeud
-						int realU = -u - 1;
-						++date;
-						end[realU] = date;
-						builder.progressions().setLabel(realU, Progression.PROCESSED);
-						continue;
-					}
+		// Pile pour la DFS itérative, contenant des tableaux de 2 éléments : {noeud, parent}
+		Deque<StackInfo> stack = new ArrayDeque<>(graph.nbVertices() * 2); // *2 pour les marqueurs de fin
 
-					if (start[u] != 0) continue;
+		// On démarre la DFS à partir du sommet "from", sans parent (indiqué par -1)
+		stack.push(new StackInfo(from, -1)); // {noeud, parent}
 
-					if (parent != -1) {
-						builder.removeWall(parent, u); // on détruit le mur
-					}
+		while (!stack.isEmpty()) {
+			StackInfo current = stack.pop();
 
-					++date;
-					start[u] = date;
-					builder.progressions().setLabel(u, Progression.PROCESSING);
+			if (current.node < 0) {
+				// Phase "après" comme si on remontait de la récursion : on récupère le vrai noeud
+				current.node = -current.node - 1;
+				builder.progressions().setLabel(current.node, Progression.PROCESSED);
+				continue;
+			}
 
-					stack.push(new int[]{-u - 1, -1}); // marqueur fin
+			// Si le noeud a déjà été visité, on passe au suivant dans la pile
+			if (visited[current.node]) continue;
 
-					int[] neighbors = graph.neighbors(u);
-					ArrayUtil.shuffle(neighbors);
+			if (current.parent != -1) {
+				builder.removeWall(current.parent, current.node); // on détruit le mur
+			}
 
-					for (int v : neighbors) {
-						if (start[v] == 0) {
-							p[v] = u;
-							stack.push(new int[]{v, u}); // on stocke le parent
-						}
-					}
+			visited[current.node] = true;
+			builder.progressions().setLabel(current.node, Progression.PROCESSING);
+
+			// marqueur fin, pour pouvoir le traiter après, comme si on remontait de la récursion
+			// On inverse le signe du noeud pour le différencier d'un vrai noeud, et on soustrait 1 pour éviter les confusions avec le noeud 0
+			stack.push(new StackInfo(-current.node - 1, -1));
+
+			// On mélange les voisins
+			// Sera exécuté qu'une seule fois par noeud car on l'a marqué comme visité avant
+			int[] neighbors = graph.neighbors(current.node);
+			ArrayUtil.shuffle(neighbors);
+
+			for (int v : neighbors) {
+				if (!visited[v]) {
+					stack.push(new StackInfo(v, current.node)); // on stocke le nouveau noeud et son parent dans la pile
 				}
-
 			}
 		}
+
+	}
+}
+
+// Classe pour stocker les informations de la pile : le noeud actuel et son parent
+final class StackInfo {
+	int node;
+	int parent;
+
+	public StackInfo(int node, int parent) {
+		this.node = node;
+		this.parent = parent;
 	}
 }
