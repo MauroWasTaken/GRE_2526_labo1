@@ -15,63 +15,70 @@ public final class DfsGenerator implements MazeGenerator {
 	@Override
 	public void generate(MazeBuilder builder, int from) {
 
-		Graph graph = builder.topology();
+		Graph topology = builder.topology();
 
 		// Tableau qui contiendra un boolean indiquant si un sommet a été visité ou non
-		boolean[] visited = new boolean[graph.nbVertices()];
+		boolean[] visited = new boolean[topology.nbVertices()];
 
-		// Pile pour la DFS itérative, contenant des tableaux de 2 éléments : {noeud, parent}
-		Deque<StackInfo> stack = new ArrayDeque<>(graph.nbVertices() * 2); // *2 pour les marqueurs de fin
+		// La pile simule la pile d'appels recursive.
+		// On empile deux etats par sommet: entree (pre-visit) puis sortie (post-visit).
+		Deque<DfsFrame> dfsStack = new ArrayDeque<>(topology.nbVertices() * 2); // *2 pour les marqueurs d'entree et de sortie
+		dfsStack.push(DfsFrame.preVisit(from, -1));
 
-		// On démarre la DFS à partir du sommet "from", sans parent (indiqué par -1)
-		stack.push(new StackInfo(from, -1)); // {noeud, parent}
+		// On n'a pas besoin de boucle for en dehors, car on sait que le graphe est connexe, donc tous les sommets seront visités à partir du sommet "from"
+		// On démarre la DFS à partir du sommet "from", sans parents (indiqué par -1)
+		while (!dfsStack.isEmpty()) {
+			DfsFrame frame = dfsStack.pop();
 
-		while (!stack.isEmpty()) {
-			StackInfo current = stack.pop();
-
-			if (current.node < 0) {
-				// Phase "après" comme si on remontait de la récursion : on récupère le vrai noeud
-				current.node = -current.node - 1;
-				builder.progressions().setLabel(current.node, Progression.PROCESSED);
+			if (frame.isPostVisit) {
+				builder.progressions().setLabel(frame.vertex, Progression.PROCESSED);
 				continue;
 			}
 
 			// Si le noeud a déjà été visité, on passe au suivant dans la pile
-			if (visited[current.node]) continue;
+			if (visited[frame.vertex]) continue;
 
-			if (current.parent != -1) {
-				builder.removeWall(current.parent, current.node); // on détruit le mur
+			if (frame.parentVertex != -1) {
+				builder.removeWall(frame.parentVertex, frame.vertex);
 			}
 
-			visited[current.node] = true;
-			builder.progressions().setLabel(current.node, Progression.PROCESSING);
+			visited[frame.vertex] = true;
+			builder.progressions().setLabel(frame.vertex, Progression.PROCESSING);
 
-			// marqueur fin, pour pouvoir le traiter après, comme si on remontait de la récursion
-			// On inverse le signe du noeud pour le différencier d'un vrai noeud, et on soustrait 1 pour éviter les confusions avec le noeud 0
-			stack.push(new StackInfo(-current.node - 1, -1));
+			// Etat de sortie du sommet, equivalent au retour d'un appel recursif.
+			dfsStack.push(DfsFrame.postVisit(frame.vertex));
 
 			// On mélange les voisins
 			// Sera exécuté qu'une seule fois par noeud car on l'a marqué comme visité avant
-			int[] neighbors = graph.neighbors(current.node);
-			ArrayUtil.shuffle(neighbors);
+			int[] shuffledNeighbors = topology.neighbors(frame.vertex);
+			ArrayUtil.shuffle(shuffledNeighbors);
 
-			for (int v : neighbors) {
-				if (!visited[v]) {
-					stack.push(new StackInfo(v, current.node)); // on stocke le nouveau noeud et son parent dans la pile
+			for (int neighbor : shuffledNeighbors) {
+				if (!visited[neighbor]) {
+					dfsStack.push(DfsFrame.preVisit(neighbor, frame.vertex));
 				}
 			}
 		}
-
 	}
 }
 
-// Classe pour stocker les informations de la pile : le noeud actuel et son parent
-final class StackInfo {
-	int node;
-	int parent;
+// Classe pour stocker les informations de la pile : le noeud actuel et son parent, ainsi que si c'est une visite pré- ou post-ordre
+final class DfsFrame {
+	final int vertex;
+	final int parentVertex;
+	final boolean isPostVisit;
 
-	public StackInfo(int node, int parent) {
-		this.node = node;
-		this.parent = parent;
+	private DfsFrame(int vertex, int parentVertex, boolean isPostVisit) {
+		this.vertex = vertex;
+		this.parentVertex = parentVertex;
+		this.isPostVisit = isPostVisit;
+	}
+
+	static DfsFrame preVisit(int vertex, int parentVertex) {
+		return new DfsFrame(vertex, parentVertex, false);
+	}
+
+	static DfsFrame postVisit(int vertex) {
+		return new DfsFrame(vertex, -1, true);
 	}
 }
