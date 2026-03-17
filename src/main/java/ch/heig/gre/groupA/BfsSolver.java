@@ -72,11 +72,11 @@ public final class BfsSolver implements MazeSolver {
         optimalPaths[source] = 1;
         distances.setLabel(source, 0);
         // file d'attente pour le parcours en largeur
-        ArrayDeque<Integer> Q = new ArrayDeque<Integer>(graph.nbVertices());
-        Q.addLast(source);    // insertion de la source dans la file
+        ArrayDeque<Integer> queue = new ArrayDeque<Integer>(graph.nbVertices());
+        queue.addLast(source);    // insertion de la source dans la file
 
-        while (!Q.isEmpty()) {     // si la queue n'est pas vide
-            int u = Q.removeFirst();   // enlever le prochain sommet de la file
+        while (!queue.isEmpty()) {     // si la queue n'est pas vide
+            int u = queue.removeFirst();   // enlever le prochain sommet de la file
             if (u == destination) { // si c'est la destination on sort de la boucle
                 break;
             }
@@ -87,7 +87,7 @@ public final class BfsSolver implements MazeSolver {
                     parent[v] = u;
                     optimalPaths[v] = optimalPaths[u];
                     distances.setLabel(v, distanceToSource[v]);
-                    Q.addLast(v);
+                    queue.addLast(v);
                 } else if (distanceToSource[v] == distanceToSource[u] + 1) { //parcours alternatif
                     optimalPaths[v] += optimalPaths[u]; // on ajoute nos chemins optimaux à ceux déjà trouvés pour ce sommet
                 }
