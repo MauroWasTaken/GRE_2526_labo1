@@ -76,20 +76,20 @@ public final class BfsSolver implements MazeSolver {
         queue.addLast(source);    // insertion de la source dans la file
 
         while (!queue.isEmpty()) {     // si la queue n'est pas vide
-            int u = queue.removeFirst();   // enlever le prochain sommet de la file
-            if (u == destination) { // si c'est la destination on sort de la boucle
+            int current = queue.removeFirst();   // enlever le prochain sommet de la file
+            if (current == destination) { // si c'est la destination on sort de la boucle
                 break;
             }
             // pour tous ses voisins on regarde s'ils ont déjà été découverts ou pas
-            for (int v : graph.neighbors(u)) {
-                if (distanceToSource[v] == -1) { // decouverte, on met à jour les valeurs et on l'ajoute à la file
-                    distanceToSource[v] = distanceToSource[u] + 1;
-                    parent[v] = u;
-                    optimalPaths[v] = optimalPaths[u];
-                    distances.setLabel(v, distanceToSource[v]);
-                    queue.addLast(v);
-                } else if (distanceToSource[v] == distanceToSource[u] + 1) { //parcours alternatif
-                    optimalPaths[v] += optimalPaths[u]; // on ajoute nos chemins optimaux à ceux déjà trouvés pour ce sommet
+            for (int neighbour : graph.neighbors(current)) {
+                if (distanceToSource[neighbour] == -1) { // decouverte, on met à jour les valeurs et on l'ajoute à la file
+                    distanceToSource[neighbour] = distanceToSource[current] + 1;
+                    parent[neighbour] = current;
+                    optimalPaths[neighbour] = optimalPaths[current];
+                    distances.setLabel(neighbour, distanceToSource[neighbour]);
+                    queue.addLast(neighbour);
+                } else if (distanceToSource[neighbour] == distanceToSource[current] + 1) { //parcours alternatif
+                    optimalPaths[neighbour] += optimalPaths[current]; // on ajoute nos chemins optimaux à ceux déjà trouvés pour ce sommet
                 }
             }
         }
